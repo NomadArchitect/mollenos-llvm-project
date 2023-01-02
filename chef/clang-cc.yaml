@@ -23,7 +23,6 @@ recipes:
         - -DLLVM_ENABLE_RUNTIMES='libcxx;libcxxabi;libunwind;compiler-rt'
         - -DCMAKE_BUILD_TYPE=Release
         - -DLLVM_INCLUDE_TESTS=Off
-        - -DLLVM_DEFAULT_TARGET_TRIPLE=amd64-uml-vali
     - name: build
       type: build
       depends: [config]
