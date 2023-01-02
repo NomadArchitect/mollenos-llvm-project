@@ -120,7 +120,7 @@ void tools::Vali::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   CmdArgs.push_back(Args.MakeArgString(std::string("-out:") + Output.getFilename()));
 
-  if (TC.getSanitizerArgs().needsAsanRt()) {
+  if (TC.getSanitizerArgs(Args).needsAsanRt()) {
     if (Args.hasArg(options::OPT_shared)) {
       CmdArgs.push_back(TC.getCompilerRTArgString(Args, "asan_dll_thunk"));
     } else {
@@ -220,24 +220,29 @@ ValiToolChain::ValiToolChain(const Driver &D, const llvm::Triple &T,
                              const llvm::opt::ArgList &Args)
     : ToolChain(D, T, Args) {}
 
-bool ValiToolChain::IsUnwindTablesDefault(const ArgList &Args) const {
+ToolChain::UnwindTableLevel
+ValiToolChain::getDefaultUnwindTableLevel(const ArgList &Args) const {
   // All non-x86_32 Windows targets require unwind tables. However, LLVM
   // doesn't know how to generate them for all targets, so only enable
   // the ones that are actually implemented.
-  return getArch() == llvm::Triple::x86_64 ||
-         getArch() == llvm::Triple::aarch64;
+  if (getArch() == llvm::Triple::x86_64 || getArch() == llvm::Triple::arm ||
+      getArch() == llvm::Triple::thumb || getArch() == llvm::Triple::aarch64)
+    return UnwindTableLevel::Asynchronous;
+
+  return UnwindTableLevel::None;
 }
 
 bool ValiToolChain::isPICDefault() const {
   return getArch() == llvm::Triple::x86_64;
 }
 
-bool ValiToolChain::isPIEDefault() const {
+bool ValiToolChain::isPIEDefault(const llvm::opt::ArgList &Args) const {
   return false;
 }
 
 bool ValiToolChain::isPICDefaultForced() const {
-  return getArch() == llvm::Triple::x86_64;
+  return getArch() == llvm::Triple::x86_64 ||
+         getArch() == llvm::Triple::aarch64;
 }
 
 void ValiToolChain::AddClangSystemIncludeArgs(
