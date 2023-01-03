@@ -5,7 +5,7 @@ project:
     against the MollenOS/Vali operating system.
   author: Philip Meulengracht
   email: the_meulengracht@hotmail.com
-  version: 1.0.0
+  version: 16.0.0
   license: LGPL
   homepage: www.mollenos.com
 
@@ -19,8 +19,6 @@ ingredients:
 - name: vali/zlib
   channel: devel
 
-# There are a number of keywords that can be used in the recipe
-# steps during generate, build, install and package.
 recipes:
   - name: llvm-projects
     path: llvm
@@ -32,7 +30,7 @@ recipes:
       arguments:
         - -G
         - '"Unix Makefiles"'
-        - -DLLVM_ENABLE_PROJECTS='libcxx;libcxxabi;libunwind'
+        - -DLLVM_ENABLE_RUNTIMES='libcxx;libcxxabi;libunwind;compiler-rt'
         - -DCMAKE_BUILD_TYPE=Release
         - -DLLVM_INCLUDE_TESTS=OFF
         - -DLLVM_INCLUDE_EXAMPLES=OFF

@@ -147,14 +147,15 @@ void tools::Vali::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     // If we are compiling native then try to find the linker through our
     // environmental variables
     Exec = Args.MakeArgString("$bin/lld-link");
-  }
-  else {
+  } else {
     // Cross-compiling to Vali, expect CROSS to be defined
     if (Optional<std::string> CrossCompilerPath =
             llvm::sys::Process::GetEnv("CROSS")) {
       Exec = Args.MakeArgString(*CrossCompilerPath + "/bin/lld-link");
-    }
-    else {
+    } else if (Optional<std::string> CrossCompilerPath =
+            llvm::sys::Process::GetEnv("VALICC")) {
+      Exec = Args.MakeArgString(*CrossCompilerPath + "/bin/lld-link");
+    } else {
       // hope it's in path
       Exec = Args.MakeArgString("lld-link");
     }
