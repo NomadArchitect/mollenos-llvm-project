@@ -38,7 +38,10 @@ set(CMAKE_RANLIB "$ENV{CROSS}/bin/llvm-ranlib" CACHE FILEPATH "")
 # only be populated on the initial configure, and their values won't change
 # afterward.
 if(DEFINED ENV{VALI_RUNTIME_PATH})
-    string(APPEND CMAKE_CXX_FLAGS_INIT " -I$ENV{VALI_RUNTIME_PATH}/include/c++/v1 -L$ENV{VALI_RUNTIME_PATH}/lib")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_INIT " -L$ENV{VALI_RUNTIME_PATH}/lib ")
+    string(APPEND CMAKE_MODULE_LINKER_FLAGS_INIT " -L$ENV{VALI_RUNTIME_PATH}/lib ")
+    string(APPEND CMAKE_SHARED_LINKER_FLAGS_INIT " -L$ENV{VALI_RUNTIME_PATH}/lib ")
+    string(APPEND CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES "$ENV{VALI_RUNTIME_PATH}/include/c++/v1")
 endif()
 
 ##################################################

@@ -71,7 +71,6 @@ recipes:
         - -DLLVM_TARGETS_TO_BUILD='X86'
         - -DLLVM_DEFAULT_TARGET_TRIPLE=${{ CHEF_TARGET_ARCHITECTURE }}-uml-vali
         - -DLLVM_ENABLE_LLD=ON
-        - -DLLVM_ENABLE_LIBCXX=ON
         - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/llvm/cmake/platforms/Vali.cmake
       env:
         CROSS: ${{ TOOLCHAIN_PREFIX }}/usr/local
