@@ -50,7 +50,7 @@ COMPILER_RT_ABI void __enable_execute_stack(void *addr) {
                  &mbi.Protect);
 #elif defined(MOLLENOS)
   unsigned int previousValue = 0;
-  if (MemoryProtect(addr, 0x1000, MEMORY_READ | MEMORY_WRITE | MEMORY_EXECUTABLE, &previousValue) != OsSuccess) {
+  if (MemoryProtect(addr, 0x1000, MEMORY_READ | MEMORY_WRITE | MEMORY_EXECUTABLE, &previousValue) != OS_EOK) {
       // assert?
   }
 #else

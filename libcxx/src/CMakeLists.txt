@@ -217,8 +217,8 @@ if (LIBCXX_ENABLE_SHARED)
   cxx_add_common_build_flags(cxx_shared)
   cxx_set_common_defines(cxx_shared)
   
-  if (MOLLENOS)
-    target_compile_definitions(cxx_shared PRIVATE _DLL)
+  if(MOLLENOS)
+    target_compile_definitions(cxx_shared PRIVATE -D_DLL)
   endif()
 
   if(ZOS)
@@ -400,9 +400,6 @@ if (LIBCXX_INSTALL_SHARED_LIBRARY)
     ARCHIVE DESTINATION ${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
     LIBRARY DESTINATION ${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
     RUNTIME DESTINATION ${LIBCXX_INSTALL_RUNTIME_DIR} COMPONENT cxx)
-  if (LLVM_BOOTSTRAP_RUNTIME)
-    set_property(GLOBAL APPEND PROPERTY LLVMExports cxx_shared)
-  endif()
 endif()
 
 if (LIBCXX_INSTALL_STATIC_LIBRARY)

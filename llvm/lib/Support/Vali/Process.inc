@@ -35,7 +35,7 @@ Process::Pid Process::getProcessId() {
 // below.
 static unsigned computePageSize() {
   SystemDescriptor_t Descriptor;
-    if (SystemQuery(&Descriptor) != OsSuccess) {
+    if (SystemQuery(&Descriptor) != OS_EOK) {
         // Default to 0x1000
         return 0x1000;
     }

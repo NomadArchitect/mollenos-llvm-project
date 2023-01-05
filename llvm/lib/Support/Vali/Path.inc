@@ -80,7 +80,7 @@ ErrorOr<space_info> disk_space(const Twine &Path) {
 // Implemented
 std::error_code current_path(SmallVectorImpl<char> &result) {
   SmallVector<char, _MAXPATH> cur_path;
-  if (GetWorkingDirectory(cur_path.data(), _MAXPATH) != OsSuccess) {
+  if (GetWorkingDirectory(cur_path.data(), _MAXPATH) != OS_EOK) {
       return make_error_code(errc::invalid_argument);
   }
   cur_path.set_size(strlen(cur_path.data()) + 1);
@@ -93,7 +93,7 @@ std::error_code current_path(SmallVectorImpl<char> &result) {
 std::error_code set_current_path(const Twine &path) {
   SmallString<_MAXPATH> path_storage;
   StringRef f = path.toNullTerminatedStringRef(path_storage);
-  if (SetWorkingDirectory(f.begin()) != OsSuccess) {
+  if (SetWorkingDirectory(f.begin()) != OS_EOK) {
       return make_error_code(errc::no_such_file_or_directory);
   }
   return std::error_code();
@@ -165,7 +165,7 @@ std::error_code is_local(const Twine &path, bool &result) {
   OsStorageDescriptor_t Descriptor;
   SmallString<_MAXPATH> path_storage;
   StringRef f = path.toNullTerminatedStringRef(path_storage);
-  if (GetStorageInformationFromPath(f.begin(), &Descriptor) != OsSuccess) {
+  if (GetStorageInformationFromPath(f.begin(), &Descriptor) != OS_EOK) {
     return make_error_code(errc::no_such_file_or_directory);
   }
   if (Descriptor.Flags & STORAGE_STATIC) {
@@ -179,7 +179,7 @@ std::error_code is_local(const Twine &path, bool &result) {
 // Implemented
 std::error_code is_local(int FD, bool &Result) {
   OsStorageDescriptor_t Descriptor;
-  if (GetStorageInformationFromFd(FD, &Descriptor) != OsSuccess) {
+  if (GetStorageInformationFromFd(FD, &Descriptor) != OS_EOK) {
     return make_error_code(errc::no_such_file_or_directory);
   }
   if (Descriptor.Flags & STORAGE_STATIC) {
@@ -213,7 +213,7 @@ std::error_code access(const Twine &Path, AccessMode Mode) {
     OsFileDescriptor_t Descriptor;
     SmallString<256> path_storage;
     StringRef f = Path.toNullTerminatedStringRef(path_storage);
-    if (GetFileInformationFromPath(f.begin(), &Descriptor) != OsSuccess) {
+    if (GetFileInformationFromPath(f.begin(), &Descriptor) != OS_EOK) {
         return errc::no_such_file_or_directory;
     }
     if (Mode == AccessMode::Write && !(Descriptor.Permissions & FILE_PERMISSION_WRITE)) {
@@ -278,7 +278,7 @@ std::error_code status(const Twine &path, file_status &result, bool Follow) {
     OsFileDescriptor_t Descriptor;
     SmallString<256> path_storage;
     StringRef f = path.toNullTerminatedStringRef(path_storage);
-    if (GetFileInformationFromPath(f.begin(), &Descriptor) != OsSuccess) {
+    if (GetFileInformationFromPath(f.begin(), &Descriptor) != OS_EOK) {
         return errc::no_such_file_or_directory;
     }
 
@@ -302,7 +302,7 @@ std::error_code status(const Twine &path, file_status &result, bool Follow) {
 // Implemented
 std::error_code status(int FD, file_status &Result) {
     OsFileDescriptor_t Descriptor;
-    if (GetFileInformationFromFd(FD, &Descriptor) != OsSuccess) {
+    if (GetFileInformationFromFd(FD, &Descriptor) != OS_EOK) {
         return errc::no_such_file_or_directory;
     }
     
@@ -369,7 +369,7 @@ std::error_code mapped_file_region::init(int FD, uint64_t Offset, mapmode Mode) 
   int Flags = (Mode == readonly) ? FILE_MAPPING_READ : (FILE_MAPPING_READ | FILE_MAPPING_WRITE);
   this->Mode = Mode;
   assert(Size != 0);
-  if (::CreateFileMapping(FD, Flags, Offset, Size, &Mapping) != OsSuccess)
+  if (::CreateFileMapping(FD, Flags, Offset, Size, &Mapping) != OS_EOK)
     return std::error_code(errno, std::generic_category());
   return std::error_code();
 }
@@ -392,7 +392,7 @@ void mapped_file_region::unmapImpl() {
 // Implemented
 int mapped_file_region::alignment() {
   SystemDescriptor_t Descriptor;
-  if (SystemQuery(&Descriptor) != OsSuccess) {
+  if (SystemQuery(&Descriptor) != OS_EOK) {
       // Default to 0x1000
       return 0x1000;
   }
@@ -591,7 +591,7 @@ std::error_code openFileForRead(const Twine &Name, int &ResultFD,
     if (RealPath) {
         RealPath->clear();
         RealPath->reserve(_MAXPATH);
-        if (GetFilePathFromFd(fd, (char*)RealPath->begin(), _MAXPATH) != OsSuccess) {
+        if (GetFilePathFromFd(fd, (char*)RealPath->begin(), _MAXPATH) != OS_EOK) {
             return std::error_code(errno, std::generic_category());
         }
         RealPath->set_size(strlen(RealPath->begin()) + 1);
@@ -734,7 +734,7 @@ std::error_code real_path(const Twine &path, SmallVectorImpl<char> &dest,
 namespace path {
 bool getUserCacheDir(SmallVectorImpl<char> &Result) {
     SmallVector<char, _MAXPATH> Buf;
-    if (GetUserCacheDirectory(Buf.data(), Buf.capacity()) != OsSuccess) {
+    if (GetUserCacheDirectory(Buf.data(), Buf.capacity()) != OS_EOK) {
         return false;
     }
     Buf.set_size(strlen(Buf.data()) + 1);
@@ -744,7 +744,7 @@ bool getUserCacheDir(SmallVectorImpl<char> &Result) {
 
 bool home_directory(SmallVectorImpl<char> &result) {
     SmallVector<char, _MAXPATH> Buf;
-    if (GetUserDirectory(Buf.data(), Buf.capacity()) != OsSuccess) {
+    if (GetUserDirectory(Buf.data(), Buf.capacity()) != OS_EOK) {
         return false;
     }
     Buf.set_size(strlen(Buf.data()) + 1);
@@ -756,12 +756,12 @@ void system_temp_directory(bool ErasedOnReboot, SmallVectorImpl<char> &Result) {
     SmallVector<char, _MAXPATH> Buf;
     Result.clear();
     if (ErasedOnReboot) {
-        if (GetApplicationTemporaryDirectory(Buf.data(), Buf.capacity()) != OsSuccess) {
+        if (GetApplicationTemporaryDirectory(Buf.data(), Buf.capacity()) != OS_EOK) {
             return;
         }
     }
     else {
-        if (GetApplicationDirectory(Buf.data(), Buf.capacity()) != OsSuccess) {
+        if (GetApplicationDirectory(Buf.data(), Buf.capacity()) != OS_EOK) {
             return;
         }
     }

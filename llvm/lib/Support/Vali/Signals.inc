@@ -119,7 +119,7 @@ public:
         // Get the status so we can determine if it's a file or directory. If we
         // can't stat the file, ignore it.
         OsFileDescriptor_t buf;
-        if (GetFileInformationFromPath(path, &buf) != OsSuccess)
+        if (GetFileInformationFromPath(path, &buf) != OS_EOK)
           continue;
 
         // If this is not a regular file, ignore it. We want to prevent removal

@@ -35,7 +35,7 @@ unsigned int getValiProtectionFlags(unsigned int Flags) {
 
 size_t getPageSize() {
     SystemDescriptor_t Descriptor;
-    if (SystemQuery(&Descriptor) != OsSuccess) {
+    if (SystemQuery(&Descriptor) != OS_EOK) {
         // Default to 0x1000
         return 0x1000;
     }
@@ -78,7 +78,7 @@ MemoryBlock Memory::allocateMappedMemory(size_t NumBytes,
   Protect |= getValiProtectionFlags(Flags);
   void *PA = NULL;
   if (::MemoryAllocate(reinterpret_cast<void*>(Start),
-                       NumBlocks*Granularity, Protect, &PA) != OsSuccess) {
+                       NumBlocks*Granularity, Protect, &PA) != OS_EOK) {
     return MemoryBlock();
   }
 
@@ -97,7 +97,7 @@ MemoryBlock Memory::allocateMappedMemory(size_t NumBytes,
   if (M.Address == 0 || M.AllocatedSize == 0)
     return std::error_code();
 
-  if (MemoryFree(M.Address, M.AllocatedSize) != OsSuccess)
+  if (MemoryFree(M.Address, M.AllocatedSize) != OS_EOK)
     return std::error_code();
 
   M.Address = 0;
@@ -113,7 +113,7 @@ MemoryBlock Memory::allocateMappedMemory(size_t NumBytes,
 
   unsigned int Protect = getValiProtectionFlags(Flags);
   unsigned int Previous = 0;
-  if (MemoryProtect(M.Address, M.AllocatedSize, Protect, &Previous) != OsSuccess)
+  if (MemoryProtect(M.Address, M.AllocatedSize, Protect, &Previous) != OS_EOK)
     return std::error_code();
 
   if (Flags & MF_EXEC)

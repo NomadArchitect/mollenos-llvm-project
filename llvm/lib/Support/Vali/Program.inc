@@ -144,7 +144,7 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
   // have embedded spaces (or are empty).
   ErrorOr<std::string> Command = flattenArgs(Args);
   OsStatus_t status = ProcessSpawn(Program.begin(), Command->c_str(), &PI.Pid);
-  if (status != OsSuccess) {
+  if (status != OS_EOK) {
       return false;
   }
   return true;
@@ -167,11 +167,11 @@ ProcessInfo sys::Wait(const ProcessInfo &PI, unsigned SecondsToWait,
     ProcStat->reset();
 
   // Wait for process
-  if (ProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode) != OsSuccess) {
+  if (ProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode) != OS_EOK) {
       // Timeout occurred
       if (SecondsToWait) {
           // Kill it
-          if (ProcessKill(PI.Pid) != OsSuccess) {
+          if (ProcessKill(PI.Pid) != OS_EOK) {
               if (ErrMsg) {
                   *ErrMsg = "Failed to kill the process after wait timeout.";
               }

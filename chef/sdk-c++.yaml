@@ -20,6 +20,40 @@ ingredients:
   channel: devel
 
 recipes:
+  - name: llvm-runtimes
+    path: runtimes
+    toolchain: vali/clang-cc
+    steps:
+    - name: config
+      type: generate
+      system: cmake
+      arguments:
+        - -G
+        - '"Unix Makefiles"'
+        - -DLLVM_ENABLE_RUNTIMES='compiler-rt;libunwind;libcxxabi;libcxx;'
+        - -DCMAKE_BUILD_TYPE=Release
+        - -DLLVM_INCLUDE_TESTS=OFF
+        - -DLLVM_BOOTSTRAP_RUNTIME=ON
+        - -DLLVM_DEFAULT_TARGET_TRIPLE=${{ CHEF_TARGET_ARCHITECTURE }}-uml-vali
+        - -DLLVM_ENABLE_LLD=ON
+        - -DLLVM_ENABLE_LIBCXX=ON
+        - -DLIBCXXABI_USE_LLVM_UNWINDER=ON
+        - -DLIBCXXABI_ENABLE_SHARED=OFF
+        - -DLIBCXX_CXX_ABI='libcxxabi'
+        - -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON
+        - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/llvm/cmake/platforms/Vali.cmake
+      env:
+        CROSS: ${{ TOOLCHAIN_PREFIX }}/usr/local
+        VALI_ARCH: ${{ CHEF_TARGET_ARCHITECTURE }}
+        VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
+        LIBCXX_BOOTSTRAP: true
+    - name: build runtimes
+      type: build
+      depends: [config]
+      system: make
+      arguments: [cxx, cxxabi, unwind]
+      env:
+        VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
   - name: llvm-projects
     path: llvm
     toolchain: vali/clang-cc
@@ -30,7 +64,6 @@ recipes:
       arguments:
         - -G
         - '"Unix Makefiles"'
-        - -DLLVM_ENABLE_RUNTIMES='libcxx;libcxxabi;libunwind;compiler-rt'
         - -DCMAKE_BUILD_TYPE=Release
         - -DLLVM_INCLUDE_TESTS=OFF
         - -DLLVM_INCLUDE_EXAMPLES=OFF
@@ -39,16 +72,18 @@ recipes:
         - -DLLVM_ENABLE_DUMP=ON
         - -DLLVM_TARGETS_TO_BUILD='X86'
         - -DLLVM_DEFAULT_TARGET_TRIPLE=${{ CHEF_TARGET_ARCHITECTURE }}-uml-vali
+        - -DLLVM_ENABLE_LLD=ON
         - -DLLVM_ENABLE_LIBCXX=ON
         - -DLIBCXXABI_USE_LLVM_UNWINDER=ON
         - -DLIBCXX_CXX_ABI='libcxxabi'
+        - -DLIBCXX_USE_COMPILER_RT=ON
         - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/llvm/cmake/platforms/Vali.cmake
       env:
         CROSS: ${{ TOOLCHAIN_PREFIX }}/usr/local
         VALI_ARCH: ${{ CHEF_TARGET_ARCHITECTURE }}
         VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
         LIBCXX_BOOTSTRAP: true
-    - name: build
+    - name: build runtimes
       type: build
       depends: [config]
       system: make

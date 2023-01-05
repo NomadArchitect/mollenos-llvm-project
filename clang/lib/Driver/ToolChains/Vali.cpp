@@ -320,7 +320,6 @@ void ValiToolChain::AddCXXStdlibLibArgs(
       CC1Args.push_back("c++abi.lib");
     } else {
       CC1Args.push_back("c++.dll.lib");
-      CC1Args.push_back("c++abi.dll.lib");
     }
     CC1Args.push_back("unwind.dll.lib");
   }
