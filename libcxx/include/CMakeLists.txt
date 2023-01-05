@@ -879,12 +879,7 @@ add_dependencies(cxx-headers generate-cxx-headers)
 target_include_directories(cxx-headers INTERFACE ${LIBCXX_GENERATED_INCLUDE_DIR}
                                                  ${LIBCXX_GENERATED_INCLUDE_TARGET_DIR})
 
-if (LIBCXX_INSTALL_HEADERS)
-  if (LLVM_BOOTSTRAP_RUNTIME)
-    install(TARGETS cxx-headers EXPORT LLVMExports)
-    set_property(GLOBAL APPEND PROPERTY LLVM_EXPORTS cxx-headers)
-  endif()
-  
+if (LIBCXX_INSTALL_HEADERS)  
   foreach(file ${files})
     get_filename_component(dir ${file} DIRECTORY)
     install(FILES ${file}

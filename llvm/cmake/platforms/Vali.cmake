@@ -30,7 +30,6 @@ set(CMAKE_C_COMPILER "$ENV{CROSS}/bin/clang" CACHE FILEPATH "")
 set(CMAKE_CXX_COMPILER "$ENV{CROSS}/bin/clang++" CACHE FILEPATH "")
 set(CMAKE_AR "$ENV{CROSS}/bin/llvm-ar" CACHE FILEPATH "")
 set(CMAKE_RANLIB "$ENV{CROSS}/bin/llvm-ranlib" CACHE FILEPATH "")
-set(VERBOSE 1)
 
 # We need to preserve any flags that were passed in by the user. However, we
 # can't append to CMAKE_C_FLAGS and friends directly, because toolchain files
@@ -38,7 +37,9 @@ set(VERBOSE 1)
 # The assignments to the _INIT cache variables don't use FORCE, so they'll
 # only be populated on the initial configure, and their values won't change
 # afterward.
-string(APPEND CMAKE_CXX_FLAGS_INIT " -nostdlib++")
+if(DEFINED ENV{VALI_RUNTIME_PATH})
+    string(APPEND CMAKE_CXX_FLAGS_INIT " -I$ENV{VALI_RUNTIME_PATH}/include/c++/v1 -L$ENV{VALI_RUNTIME_PATH}/lib")
+endif()
 
 ##################################################
 # Setup LLVM custom options

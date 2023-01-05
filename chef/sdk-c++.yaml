@@ -33,7 +33,6 @@ recipes:
         - -DLLVM_ENABLE_RUNTIMES='compiler-rt;libunwind;libcxxabi;libcxx;'
         - -DCMAKE_BUILD_TYPE=Release
         - -DLLVM_INCLUDE_TESTS=OFF
-        - -DLLVM_BOOTSTRAP_RUNTIME=ON
         - -DLLVM_DEFAULT_TARGET_TRIPLE=${{ CHEF_TARGET_ARCHITECTURE }}-uml-vali
         - -DLLVM_ENABLE_LLD=ON
         - -DLLVM_ENABLE_LIBCXX=ON
@@ -41,7 +40,7 @@ recipes:
         - -DLIBCXXABI_ENABLE_SHARED=OFF
         - -DLIBCXX_CXX_ABI='libcxxabi'
         - -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON
-        - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/llvm/cmake/platforms/Vali.cmake
+        - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/chef/Vali.cmake
       env:
         CROSS: ${{ TOOLCHAIN_PREFIX }}/usr/local
         VALI_ARCH: ${{ CHEF_TARGET_ARCHITECTURE }}
@@ -51,7 +50,7 @@ recipes:
       type: build
       depends: [config]
       system: make
-      arguments: [cxx, cxxabi, unwind]
+      arguments: [cxx, cxxabi, unwind, compiler-rt]
       env:
         VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
   - name: llvm-projects
@@ -68,21 +67,17 @@ recipes:
         - -DLLVM_INCLUDE_TESTS=OFF
         - -DLLVM_INCLUDE_EXAMPLES=OFF
         - -DLLVM_INCLUDE_BENCHMARKS=OFF
-        - -DLLVM_BOOTSTRAP_RUNTIME=ON
         - -DLLVM_ENABLE_DUMP=ON
         - -DLLVM_TARGETS_TO_BUILD='X86'
         - -DLLVM_DEFAULT_TARGET_TRIPLE=${{ CHEF_TARGET_ARCHITECTURE }}-uml-vali
         - -DLLVM_ENABLE_LLD=ON
         - -DLLVM_ENABLE_LIBCXX=ON
-        - -DLIBCXXABI_USE_LLVM_UNWINDER=ON
-        - -DLIBCXX_CXX_ABI='libcxxabi'
-        - -DLIBCXX_USE_COMPILER_RT=ON
         - -DCMAKE_TOOLCHAIN_FILE=${{ PROJECT_PATH }}/llvm/cmake/platforms/Vali.cmake
       env:
         CROSS: ${{ TOOLCHAIN_PREFIX }}/usr/local
         VALI_ARCH: ${{ CHEF_TARGET_ARCHITECTURE }}
         VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
-        LIBCXX_BOOTSTRAP: true
+        VALI_RUNTIME_PATH: ${{ INSTALL_PREFIX }}
     - name: build runtimes
       type: build
       depends: [config]
