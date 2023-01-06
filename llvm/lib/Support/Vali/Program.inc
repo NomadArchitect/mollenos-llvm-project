@@ -161,7 +161,9 @@ ProcessInfo sys::Wait(const ProcessInfo &PI,
   assert(PI.Pid && "invalid pid to wait on, process not started?");
   assert(PI.Pid != UUID_INVALID &&
          "invalid process handle to wait on, process not started?");
-  size_t milliSecondsToWait = 0;
+  size_t  milliSecondsToWait = SecondsToWait ? *SecondsToWait * 1000 : 0;
+  oserr_t oserr;
+  
   ProcessInfo WaitResult = PI;
   if (!WaitUntilChildTerminates && SecondsToWait > 0)
     milliSecondsToWait = SecondsToWait * 1000;
@@ -169,21 +171,42 @@ ProcessInfo sys::Wait(const ProcessInfo &PI,
   if (ProcStat)
     ProcStat->reset();
 
-  // Wait for process
-  if (OSProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode) != OS_EOK) {
-      // Timeout occurred
-      if (SecondsToWait) {
-          // Kill it
-          if (OSProcessSignal(PI.Pid, SIGKILL) != OS_EOK) {
-              if (ErrMsg) {
-                  *ErrMsg = "Failed to kill the process after wait timeout.";
-              }
-          }
-          return WaitResult;
+  oserr = OSProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode);
+  if (oserr == OS_ETIMEOUT) {
+    if (!Polling && *SecondsToWait > 0) {
+      oserr = OSProcessSignal(PI.Pid, SIGKILL);
+      if (oserr != OS_EOK) {
+        if (ErrMsg)
+          MakeErrMsg(ErrMsg, "Failed to terminate timed-out program");
+
+        // -2 indicates a crash or timeout as opposed to failure to execute.
+        WaitResult.ReturnCode = -2;
+        return WaitResult;
       }
-      else {
-          return ProcessInfo();
-      }
+      (void)OSProcessJoin(PI.Pid, 0, &WaitResult.ReturnCode);
+    } else {
+      // Non-blocking wait.
+      return ProcessInfo();
+    }
+  }
+
+  // Get process execution statistics.
+  if (ProcStat) {
+    /** 
+     * TODO: Implement these statistics
+    FILETIME CreationTime, ExitTime, KernelTime, UserTime;
+    PROCESS_MEMORY_COUNTERS MemInfo;
+    if (GetProcessTimes(PI.Process, &CreationTime, &ExitTime, &KernelTime,
+                        &UserTime) &&
+        GetProcessMemoryInfo(PI.Process, &MemInfo, sizeof(MemInfo))) {
+      auto UserT = std::chrono::duration_cast<std::chrono::microseconds>(
+          toDuration(UserTime));
+      auto KernelT = std::chrono::duration_cast<std::chrono::microseconds>(
+          toDuration(KernelTime));
+      uint64_t PeakMemory = MemInfo.PeakPagefileUsage / 1024;
+      *ProcStat = ProcessStatistics{UserT + KernelT, UserT, PeakMemory};
+    }
+    */
   }
   return WaitResult;
 }
