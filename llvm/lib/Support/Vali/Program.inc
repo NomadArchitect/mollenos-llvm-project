@@ -21,7 +21,8 @@
 #include <io.h>
 #include <malloc.h>
 #include <os/mollenos.h>
-#include <os/process.h>
+#include <os/services/process.h>
+#include <signal.h>
 
 namespace llvm {
 
@@ -37,12 +38,12 @@ ErrorOr<std::string> sys::findProgramByName(StringRef Name,
 
   SmallVector<StringRef, 12> PathExts;
   PathExts.push_back("");
-  PathExts.push_back(".app");
+  PathExts.push_back(".run");
 
   SmallVector<StringRef, 16> EnvironmentPaths;
   if (Paths.empty())
     if (const char *PathEnv = std::getenv("PATH")) {
-      SplitString(PathEnv, EnvironmentPaths, ":");
+      SplitString(PathEnv, EnvironmentPaths, ";");
       Paths = EnvironmentPaths;
     }
   
@@ -134,16 +135,16 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
     return false;
   }
 
-  // can_execute may succeed by looking at Program + ".app". 
+  // can_execute may succeed by looking at Program + ".run". 
   SmallString<64> ProgramStorage;
   if (!sys::fs::exists(Program))
-    Program = Twine(Program + ".app").toStringRef(ProgramStorage);
+    Program = Twine(Program + ".run").toStringRef(ProgramStorage);
 
   // Vali wants a command line, not an array of args, to pass to the new
   // process.  We have to concatenate them all, while quoting the args that
   // have embedded spaces (or are empty).
   ErrorOr<std::string> Command = flattenArgs(Args);
-  OsStatus_t status = ProcessSpawn(Program.begin(), Command->c_str(), &PI.Pid);
+  oserr_t status = OSProcessSpawn(Program.begin(), Command->c_str(), &PI.Pid);
   if (status != OS_EOK) {
       return false;
   }
@@ -152,9 +153,11 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
 
 // Implemented
 namespace llvm {
-ProcessInfo sys::Wait(const ProcessInfo &PI, unsigned SecondsToWait,
-                      bool WaitUntilChildTerminates, std::string *ErrMsg,
-                      Optional<ProcessStatistics> *ProcStat) {
+ProcessInfo sys::Wait(const ProcessInfo &PI,
+                      std::optional<unsigned> SecondsToWait,
+                      std::string *ErrMsg,
+                      std::optional<ProcessStatistics> *ProcStat,
+                      bool Polling) {
   assert(PI.Pid && "invalid pid to wait on, process not started?");
   assert(PI.Pid != UUID_INVALID &&
          "invalid process handle to wait on, process not started?");
@@ -167,11 +170,11 @@ ProcessInfo sys::Wait(const ProcessInfo &PI, unsigned SecondsToWait,
     ProcStat->reset();
 
   // Wait for process
-  if (ProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode) != OS_EOK) {
+  if (OSProcessJoin(PI.Pid, milliSecondsToWait, &WaitResult.ReturnCode) != OS_EOK) {
       // Timeout occurred
       if (SecondsToWait) {
           // Kill it
-          if (ProcessKill(PI.Pid) != OS_EOK) {
+          if (OSProcessSignal(PI.Pid, SIGKILL) != OS_EOK) {
               if (ErrMsg) {
                   *ErrMsg = "Failed to kill the process after wait timeout.";
               }

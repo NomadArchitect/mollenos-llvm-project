@@ -77,7 +77,7 @@ recipes:
         VALI_ARCH: ${{ CHEF_TARGET_ARCHITECTURE }}
         VALI_SDK_PATH: ${{ INGREDIENTS_PREFIX }}
         VALI_RUNTIME_PATH: ${{ INSTALL_PREFIX }}
-    - name: build runtimes
+    - name: build llvm
       type: build
       depends: [config]
       system: make
