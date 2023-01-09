@@ -463,15 +463,6 @@ ErrorOr<basic_file_status> directory_entry::status() const {
   return s;
 }
 
-void expand_tilde(const Twine &path, SmallVectorImpl<char> &dest) {
-  dest.clear();
-  if (path.isTriviallyEmpty())
-    return;
-
-  path.toVector(dest);
-  expandTildeExpr(dest);
-}
-
 static int nativeOpenFlags(CreationDisposition Disp, OpenFlags Flags,
                            FileAccess Access) {
   int Result = 0;
@@ -664,6 +655,15 @@ static void expandTildeExpr(SmallVectorImpl<char> &Path) {
   // Overwrite the first character and insert the rest.
   Path[0] = HomeDir[0];
   Path.insert(Path.begin() + 1, HomeDir.begin() + 1, HomeDir.end());
+}
+
+void expand_tilde(const Twine &path, SmallVectorImpl<char> &dest) {
+  dest.clear();
+  if (path.isTriviallyEmpty())
+    return;
+
+  path.toVector(dest);
+  expandTildeExpr(dest);
 }
 
 std::error_code real_path(const Twine &path, SmallVectorImpl<char> &dest,
