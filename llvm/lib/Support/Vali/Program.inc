@@ -14,6 +14,7 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/Errc.h"
+#include "llvm/Support/Errno.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
@@ -151,6 +152,23 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
   return true;
 }
 
+/// This function builds an error message into \p ErrMsg using the \p prefix
+/// string and the Unix error number given by \p errnum. If errnum is -1, the
+/// default then the value of errno is used.
+/// Make an error message
+///
+/// If the error number can be converted to a string, it will be
+/// separated from prefix by ": ".
+static inline bool MakeErrMsg(
+  std::string* ErrMsg, const std::string& prefix, int errnum = -1) {
+  if (!ErrMsg)
+    return true;
+  if (errnum == -1)
+    errnum = errno;
+  *ErrMsg = prefix + ": " + llvm::sys::StrError(errnum);
+  return true;
+}
+
 // Implemented
 namespace llvm {
 ProcessInfo sys::Wait(const ProcessInfo &PI,
@@ -161,13 +179,10 @@ ProcessInfo sys::Wait(const ProcessInfo &PI,
   assert(PI.Pid && "invalid pid to wait on, process not started?");
   assert(PI.Pid != UUID_INVALID &&
          "invalid process handle to wait on, process not started?");
-  size_t  milliSecondsToWait = SecondsToWait ? *SecondsToWait * 1000 : 0;
-  oserr_t oserr;
-  
+  size_t      milliSecondsToWait = SecondsToWait ? *SecondsToWait * 1000 : 0;
+  oserr_t     oserr;
   ProcessInfo WaitResult = PI;
-  if (!WaitUntilChildTerminates && SecondsToWait > 0)
-    milliSecondsToWait = SecondsToWait * 1000;
-
+  
   if (ProcStat)
     ProcStat->reset();
 

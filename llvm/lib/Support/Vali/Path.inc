@@ -374,6 +374,13 @@ void mapped_file_region::unmapImpl() {
     ::DestroyFileMapping(Mapping);
 }
 
+void mapped_file_region::dontNeedImpl() {
+  assert(Mode == mapped_file_region::readonly);
+  if (!Mapping)
+    return;
+  // we have no support for madvise, so no-op this
+}
+
 // Implemented
 int mapped_file_region::alignment() {
   SystemDescriptor_t Descriptor;
@@ -454,6 +461,15 @@ ErrorOr<basic_file_status> directory_entry::status() const {
   if (auto EC = fs::status(Path, s, FollowSymlinks))
     return EC;
   return s;
+}
+
+void expand_tilde(const Twine &path, SmallVectorImpl<char> &dest) {
+  dest.clear();
+  if (path.isTriviallyEmpty())
+    return;
+
+  path.toVector(dest);
+  expandTildeExpr(dest);
 }
 
 static int nativeOpenFlags(CreationDisposition Disp, OpenFlags Flags,

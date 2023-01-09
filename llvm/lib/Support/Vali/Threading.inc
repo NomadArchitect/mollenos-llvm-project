@@ -147,3 +147,11 @@ int computeHostNumHardwareThreads() {
     return Val;
   return 1;
 }
+
+int llvm::get_physical_cores() {
+  SystemDescriptor_t descriptor;
+  if (SystemQuery(&descriptor) != OS_EOK) {
+      return 1;
+  }
+  return (int)descriptor.NumberOfActiveCores;
+}
