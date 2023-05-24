@@ -16,6 +16,7 @@
 #include <os/services/file.h>
 #include <os/services/process.h>
 #include <os/services/path.h>
+#include <sys/mman.h>
 #include <threads.h>
 #include <errno.h>
 #include <stdio.h>
@@ -351,10 +352,15 @@ std::error_code setLastAccessAndModificationTime(int FD, TimePoint<> AccessTime,
 
 // Implemented
 std::error_code mapped_file_region::init(int FD, uint64_t Offset, mapmode Mode) {
-  int Flags = (Mode == readonly) ? FILE_MAPPING_READ : (FILE_MAPPING_READ | FILE_MAPPING_WRITE);
-  this->Mode = Mode;
   assert(Size != 0);
-  if (::CreateFileMapping(FD, Flags, Offset, Size, &Mapping) != OS_EOK)
+
+  int flags = (Mode == readwrite) ? MAP_SHARED : MAP_PRIVATE;
+  int prot = (Mode == readonly) ? PROT_READ : (PROT_READ | PROT_WRITE);
+#if defined(MAP_NORESERVE)
+  flags |= MAP_NORESERVE;
+#endif
+  Mapping = ::mmap(nullptr, Size, prot, flags, FD, Offset);
+  if (Mapping == nullptr)
     return std::error_code(errno, std::generic_category());
   return std::error_code();
 }
@@ -362,16 +368,17 @@ std::error_code mapped_file_region::init(int FD, uint64_t Offset, mapmode Mode) 
 // Implemented
 mapped_file_region::mapped_file_region(int fd, mapmode mode, size_t length,
                                        uint64_t offset, std::error_code &ec)
-    : Size(length), Mapping() {
+    : Size(length), Mode(mode) {
+  (void)Mode;
   ec = init(fd, offset, mode);
   if (ec)
-    Mapping = nullptr;
+    copyFrom(mapped_file_region());
 }
 
 // Implemented
 void mapped_file_region::unmapImpl() {
   if (Mapping)
-    ::DestroyFileMapping(Mapping);
+    ::munmap(Mapping, Size);
 }
 
 void mapped_file_region::dontNeedImpl() {
@@ -383,12 +390,21 @@ void mapped_file_region::dontNeedImpl() {
 
 // Implemented
 int mapped_file_region::alignment() {
-  SystemDescriptor_t Descriptor;
-  if (SystemQuery(&Descriptor) != OS_EOK) {
-      // Default to 0x1000
-      return 0x1000;
-  }
-  return Descriptor.PageSizeBytes;
+    OSSystemMemoryInfo_t memInfo;
+    oserr_t              oserr;
+    size_t               bytesQueried;
+
+    oserr = OSSystemQuery(
+            OSSYSTEMQUERY_MEMINFO,
+            &memInfo,
+            sizeof(OSSystemMemoryInfo_t),
+            &bytesQueried
+    );
+    if (oserr != OS_EOK) {
+        // Default to 0x1000
+        return 0x1000;
+    }
+    return memInfo.PageSizeBytes;
 }
 
 std::error_code detail::directory_iterator_construct(detail::DirIterState &it,

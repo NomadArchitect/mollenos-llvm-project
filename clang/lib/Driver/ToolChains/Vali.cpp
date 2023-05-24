@@ -276,11 +276,6 @@ void ValiToolChain::AddClangSystemIncludeArgs(
       auto IncludePath = *SdkIncludePath + "/include";
       addSystemInclude(DriverArgs, CC1Args, IncludePath);
     }
-    if (Optional<std::string> DdkIncludePath =
-            llvm::sys::Process::GetEnv("VALI_DDK_PATH")) {
-      auto IncludePath = *DdkIncludePath + "/include";
-      addSystemInclude(DriverArgs, CC1Args, IncludePath);
-    }
   }
   AddSystemAfterIncludes();
 }

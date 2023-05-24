@@ -149,9 +149,18 @@ int computeHostNumHardwareThreads() {
 }
 
 int llvm::get_physical_cores() {
-  SystemDescriptor_t descriptor;
-  if (SystemQuery(&descriptor) != OS_EOK) {
+  OSSystemCPUInfo_t cpuInfo;
+  oserr_t           oserr;
+  size_t            bytesQueried;
+
+  oserr = OSSystemQuery(
+          OSSYSTEMQUERY_CPUINFO,
+          &cpuInfo,
+          sizeof(OSSystemCPUInfo_t),
+          &bytesQueried
+  );
+  if (oserr != OS_EOK) {
       return 1;
   }
-  return (int)descriptor.NumberOfActiveCores;
+  return (int)cpuInfo.NumberOfActiveCores;
 }

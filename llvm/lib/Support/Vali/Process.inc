@@ -34,12 +34,21 @@ Process::Pid Process::getProcessId() {
 // present solely so it can be called once to initialize the self_process member
 // below.
 static unsigned computePageSize() {
-  SystemDescriptor_t Descriptor;
-    if (SystemQuery(&Descriptor) != OS_EOK) {
-        // Default to 0x1000
-        return 0x1000;
-    }
-    return Descriptor.PageSizeBytes;
+  OSSystemMemoryInfo_t memInfo;
+  oserr_t              oserr;
+  size_t               bytesQueried;
+
+  oserr = OSSystemQuery(
+          OSSYSTEMQUERY_MEMINFO,
+          &memInfo,
+          sizeof(OSSystemMemoryInfo_t),
+          &bytesQueried
+  );
+  if (oserr != OS_EOK) {
+      // Default to 0x1000
+      return 0x1000;
+  }
+  return memInfo.PageSizeBytes;
 }
 
 Expected<unsigned> Process::getPageSize() {

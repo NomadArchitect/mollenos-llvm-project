@@ -35,12 +35,21 @@ unsigned int getValiProtectionFlags(unsigned int Flags) {
 }
 
 size_t getPageSize() {
-    SystemDescriptor_t Descriptor;
-    if (SystemQuery(&Descriptor) != OS_EOK) {
+    OSSystemMemoryInfo_t memInfo;
+    oserr_t              oserr;
+    size_t               bytesQueried;
+
+    oserr = OSSystemQuery(
+            OSSYSTEMQUERY_MEMINFO,
+            &memInfo,
+            sizeof(OSSystemMemoryInfo_t),
+            &bytesQueried
+    );
+    if (oserr != OS_EOK) {
         // Default to 0x1000
         return 0x1000;
     }
-    return Descriptor.PageSizeBytes;
+    return memInfo.PageSizeBytes;
 }
 
 } // namespace
